@@ -1,0 +1,30 @@
+version: '3.8'
+
+# Оверрайд для локальной разработки.
+# Монтирует src/ внутрь контейнера и включает hot-reload.
+#
+# Использование:
+#   make up-dev
+#   # или напрямую:
+#   docker compose -f mlops/docker/docker-compose.yml \
+#                  -f mlops/docker/docker-compose.override.yml up -d
+#
+# НЕ используй в продакшне.
+
+services:
+  chatbot:
+    volumes:
+      - ../../src:/opt/app-root/src           # монтируем исходники (перекрывают установленный пакет)
+      - ../../scripts:/opt/app-root/scripts   # монтируем скрипты
+    environment:
+      DEBUG: "true"
+      STAGE: "dev"
+      PYTHONPATH: /opt/app-root/src           # src/ приоритетнее установленного пакета
+    # Uvicorn с hot-reload: перезапускает воркер при изменении файлов в src/
+    command: >
+      python -m uvicorn service.api:create_app
+      --host 0.0.0.0
+      --port 32000
+      --reload
+      --reload-dir /opt/app-root/src
+      --factory

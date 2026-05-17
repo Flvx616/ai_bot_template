@@ -1,0 +1,42 @@
+# Секреты — никогда не попадают в образ
+.env
+.env.prod
+*.env
+secrets/
+
+# Git
+.git/
+.gitignore
+
+# Python артефакты
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Инструменты разработки
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# Jupyter-ноутбуки и эксперименты
+experiments/
+*.ipynb
+.ipynb_checkpoints/
+
+# Логи и данные
+*.log
+logs/
+chroma_data/
+pg_data/
+redis_data/
+
+# IDE
+.idea/
+.vscode/
+
+# Документация
+README.md

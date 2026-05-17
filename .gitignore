@@ -1,0 +1,36 @@
+# Environment files — NEVER commit secrets
+.env
+.env.prod
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.uv/
+
+# Logs
+*.log
+logs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Docker volumes / data
+chroma_data/
+pg_data/
+redis_data/
+
+# uv
+uv.lock

@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command \"Remove-Item -Path ''C:\\\\Bots\\\\ai_bot_template'' -Recurse -Force -ErrorAction SilentlyContinue; Copy-Item -Path ''C:\\\\Bots\\\\MyBots\\\\My_AI_bot'' -Destination ''C:\\\\Bots\\\\ai_bot_template'' -Recurse\")"
+    ]
+  }
+}

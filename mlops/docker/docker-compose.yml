@@ -1,0 +1,120 @@
+version: '3.8'
+
+# Локальная разработка — все сервисы в одном файле.
+#
+# Быстрый старт:
+#   cp .env.prod.example .env.prod   # заполни CHANGEME-значения
+#   docker build -t rag-chatbot:latest -f mlops/docker/Dockerfile .
+#   docker compose -f mlops/docker/docker-compose.yml up -d
+#   curl http://localhost:32000/health
+
+services:
+
+  # ── Бот ────────────────────────────────────────────────────────────────────
+  chatbot:
+    image: rag-chatbot:latest
+    container_name: rag-chatbot
+    restart: on-failure
+    ports:
+      - "127.0.0.1:32000:32000"
+    env_file:
+      - ../../.env.prod                  # читаем из корня проекта
+    environment:
+      # Переопределяем хосты сервисов на имена контейнеров внутри сети
+      APP_HOST: "0.0.0.0"
+      APP_PORT: "32000"
+      PG_HOST: postgres
+      REDIS_HOST: redis
+      CHROMA_HOST: chromadb
+      LOG_PATH: /opt/app-root/logs
+      METRIC_PATH: /opt/app-root/logs
+      AUDIT_LOG_PATH: /opt/app-root/logs
+    volumes:
+      - chatbot_logs:/opt/app-root/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      chromadb:
+        condition: service_started
+    networks:
+      - app-network
+
+  # ── Redis ───────────────────────────────────────────────────────────────────
+  redis:
+    image: redis/redis-stack-server:latest
+    container_name: rag-redis
+    restart: on-failure
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - app-network
+
+  # ── ChromaDB ────────────────────────────────────────────────────────────────
+  chromadb:
+    image: chromadb/chroma:1.5.2
+    container_name: rag-chroma
+    restart: on-failure
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - chroma_data:/data
+    networks:
+      - app-network
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: rag-postgres
+    restart: on-failure
+    env_file:
+      - ../../.env.prod
+    environment:
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - app-network
+
+  # ── Telegram Bot ────────────────────────────────────────────────────────────
+  telegram-bot:
+    build:
+      context: ../..
+      dockerfile: mlops/docker/Dockerfile.telegram
+    container_name: rag-telegram-bot
+    restart: on-failure
+    env_file:
+      - ../../.env.prod
+    environment:
+      CHAT_API_URL: "http://chatbot:32000/api/v1/chat"
+    depends_on:
+      - chatbot
+    networks:
+      - app-network
+
+volumes:
+  redis_data:
+  chroma_data:
+  pg_data:
+  chatbot_logs:
+
+networks:
+  app-network:
+    driver: bridge
